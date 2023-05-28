@@ -25,12 +25,12 @@ export default class Deck {
     }
   }
 
-  public size() {
+  public size(): number {
     return this.cards.length;
   }
 
-  public pick() {
-    return this.cards.pop();
+  public pick(): Card {
+    return this.cards.pop()!;
   }
 }
 

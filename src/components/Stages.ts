@@ -1,5 +1,14 @@
+import Card from "./Card";
 import Deck from "./Deck";
 import Player from "./Player";
+
+export interface IStageInit {
+  players: Player[];
+  deck: Deck;
+  onStageEnd: () => void;
+  onDeal: () => void,
+  smallBlind: number;
+}
 
 export interface IStage {
   players: Player[];
@@ -7,18 +16,19 @@ export interface IStage {
   onStageEnd: () => void;
 }
 
-export interface IStageInit extends IStage {
+export interface IPreFlop extends IStage {
   smallBlind: number;
 }
 
-export interface IPreFlop extends IStage {
-  smallBlind: number;
+export interface IFlop extends IStage {
+  onDeal: () => void,
 }
 
 export abstract class Stage {
   protected players: Player[];
   protected deck: Deck;
   protected currentPlayerI: number;
+  protected lastPlayerToPlayI: number;
   protected biggestBet: number;
   protected onStageEnd: () => void;
 
@@ -26,24 +36,38 @@ export abstract class Stage {
     return this.players[this.currentPlayerI];
   }
 
-  get lastPlayer() {
-    return this.players[this.currentPlayerI - 1];
+  get lastPlayerI() {
+    if (this.currentPlayerI === 0) {
+      return this.players.length - 1;
+    }
+    
+    return this.currentPlayerI - 1;
+  }
+
+  get lastPlayer() { 
+    return this.players[this.lastPlayerI];
+  }
+
+  get nextPlayerI() {
+    return (this.currentPlayerI + 1) % this.players.length;
   }
 
   get nextPlayer() {
-    return this.players[this.currentPlayerI + 1];
+    return this.players[this.nextPlayerI];
   }
 
   constructor({ players, deck, onStageEnd }: IStage) {
+    this.onStageEnd = onStageEnd;
     this.deck = deck;
     this.players = players;
-    this.onStageEnd = onStageEnd;
     this.currentPlayerI = 0;
+    this.lastPlayerToPlayI = players.length - 1;
     this.biggestBet = 0;
   }
 
   protected next() {
-    this.currentPlayerI = (this.currentPlayerI + 1) % this.players.length;
+    if (this.currentPlayerI === this.lastPlayerToPlayI) this.onStageEnd();
+    else this.currentPlayerI = this.nextPlayerI;
   }
 
   public check() {
@@ -80,6 +104,7 @@ export abstract class Stage {
     }
 
     this.biggestBet = value;
+    this.lastPlayerToPlayI = this.lastPlayerI;
     this.currentPlayer.bet(value);
     this.next();
   }
@@ -95,24 +120,37 @@ export class PreFlop extends Stage {
     this.smallBlind = smallBlind;
   }
 
-  private deal() {
+  public start() {
     for (let i = 0; i < 2; i++) {
       this.players.forEach((player) => {
         const card = this.deck.pick();
         if (card) player.addCard(card);
       });
     }
-  }
 
-  public start() {
-    this.deal();
     this.raise(this.smallBlind);
     this.raise(this.smallBlind * 2);
   }
 }
 
+export class Flop extends Stage {
+  private onDeal: () => void;
+
+  constructor({ deck, players, onStageEnd, onDeal }: IFlop) {
+    super({ deck, players, onStageEnd });
+    this.onDeal = onDeal;
+  }
+
+  public start() {
+    for (let i = 0; i < 3; i++) this.onDeal();
+  }
+}
+
 export default class Stages {
-  static make({ players, deck, smallBlind, onStageEnd }: IStageInit) {
-    return [new PreFlop({ players, deck, smallBlind, onStageEnd })];
+  static make({ players, deck, smallBlind, onStageEnd, onDeal }: IStageInit) {
+    return [
+      new PreFlop({ players, deck, smallBlind, onStageEnd }),
+      new Flop({ players, deck, onStageEnd, onDeal }),
+    ];
   }
 }

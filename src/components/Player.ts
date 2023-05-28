@@ -10,13 +10,15 @@ export default class Player {
   public hand: Card[];
   public name: string;
   public bankroll: number;
+  public currentBet: number;
   public id: string;
 
   constructor({ name, bankroll, id }: IPlayer) {
     this.hand = [];
     this.name = name;
-    this.bankroll = bankroll;
     this.id = id;
+    this.bankroll = bankroll;
+    this.currentBet = 0;
   }
 
   public addCard(card: Card) {
@@ -24,8 +26,26 @@ export default class Player {
   }
 
   public bet(amount: number) {
-    this.bankroll = Math.max(0, this.bankroll - amount);
-    return amount;
+    const currentBankroll = this.bankroll;
+
+    if (amount > currentBankroll) {
+      this.currentBet = currentBankroll;
+      this.bankroll = 0;
+    } else {
+      this.bankroll -= amount;
+      this.currentBet += amount;
+    }
   }
 
+  public pay() {
+    const total = this.currentBet;
+    this.currentBet = 0;
+    
+    return total;
+  }
+
+  public win(amount: number) {
+    this.bankroll += amount;
+    this.currentBet = 0;
+  }
 }
