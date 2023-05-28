@@ -26,15 +26,10 @@ export default class Player {
   }
 
   public bet(amount: number) {
-    const currentBankroll = this.bankroll;
+    const totalbet = Math.min(amount, this.bankroll);
 
-    if (amount > currentBankroll) {
-      this.currentBet = currentBankroll;
-      this.bankroll = 0;
-    } else {
-      this.bankroll -= amount;
-      this.currentBet += amount;
-    }
+    this.bankroll -= totalbet;
+    this.currentBet += totalbet;
   }
 
   public pay() {

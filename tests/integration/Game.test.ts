@@ -1,4 +1,4 @@
-import Game from "../../src/components/Game";
+import Game from "../../src/modules/Game";
 
 describe("Testes da clase game", () => {
   const initialBankroll = 200;
@@ -40,7 +40,7 @@ describe("Testes da clase game", () => {
 
     expect(game.players[0].hand.length).toBe(2);
     expect(game.players[1].hand.length).toBe(2);
-    expect(game.round!.deck.size()).toBe(48);
+    expect(game.round!.deck.size).toBe(48);
   });
 
   test("Deve ser apostado o small blind e big blind corretamente", () => {
@@ -70,7 +70,7 @@ describe("Testes da clase game", () => {
     expect(game.round!.community).toHaveLength(3);
   });
 
-  test("Deve ser possível dar check caso não haja apostas", () => {    
+  test("Deve ser possível dar check caso não hajam apostas", () => {    
     expect(() => game.action(playerA.id, { action: 'check' })).not.toThrow();
     expect(() => game.action(playerB.id, { action: 'check' })).not.toThrow();
   });

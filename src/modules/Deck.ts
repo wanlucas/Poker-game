@@ -8,6 +8,10 @@ export default class Deck {
     this.generate();
   }
 
+  get size() {
+    return this.cards.length;
+  }
+
   private generate() {
     const options: Card[] = [];
 
@@ -25,13 +29,7 @@ export default class Deck {
     }
   }
 
-  public size(): number {
-    return this.cards.length;
-  }
-
   public pick(): Card {
     return this.cards.pop()!;
   }
 }
-
-console.log(new Deck());
