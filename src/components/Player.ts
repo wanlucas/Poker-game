@@ -44,7 +44,7 @@ export default class Player {
     return total;
   }
 
-  public win(amount: number) {
+  public receive(amount: number) {
     this.bankroll += amount;
     this.currentBet = 0;
   }

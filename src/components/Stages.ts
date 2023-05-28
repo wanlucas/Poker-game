@@ -146,11 +146,32 @@ export class Flop extends Stage {
   }
 }
 
+export class Turn extends Stage {
+  private onDeal: () => void;
+
+  constructor({ deck, players, onDeal, onStageEnd }: IFlop) {
+    super({ deck, players, onStageEnd });
+    this.onDeal = onDeal;
+  };
+
+  public start() {
+    this.onDeal();
+  }
+}
+
+export class River extends Turn {
+  constructor({ deck, players, onDeal, onStageEnd }: IFlop) {
+    super({ deck, players, onStageEnd, onDeal });
+  };
+}
+
 export default class Stages {
   static make({ players, deck, smallBlind, onStageEnd, onDeal }: IStageInit) {
     return [
       new PreFlop({ players, deck, smallBlind, onStageEnd }),
       new Flop({ players, deck, onStageEnd, onDeal }),
+      new Turn({ players, deck, onStageEnd, onDeal }),
+      new River({ players, deck, onStageEnd, onDeal }),
     ];
   }
 }

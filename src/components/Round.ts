@@ -35,16 +35,31 @@ export default class Round {
     this.currentStage.start();
   }
 
+  private deal() {
+    this.community.push(this.deck.pick());  
+  }
+
+  private verifyWinner() {
+    // calculate hands - soon
+    return this.players[0];
+  }
+
+  private showdown() {
+    const winner = this.verifyWinner();
+
+    winner.receive(this.pot);
+    this.pot = 0;
+  }
+
   private nextStage() {
     this.players.forEach((player) => {
       this.pot += player.pay();
     });
 
     this.stages.shift();
-    this.currentStage.start();
-  }
-
-  private deal() {
-    this.community.push(this.deck.pick());  
+    
+    if (this.currentStage) {
+      this.currentStage.start();
+    } else this.showdown(); 
   }
 }
