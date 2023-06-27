@@ -40,6 +40,7 @@ export default class Game {
     this.round = new Round({
       players: this.players,
       smallBlind: this.smallBlind,
+      onRoundEnd: this.finishRound.bind(this),
     });
   }
 
@@ -78,11 +79,9 @@ export default class Game {
     this.players.push(this.players.shift()!);
   }
 
-  private nextRound() {
+  private finishRound() {
+    this.round = null;
     this.nextDealer();
-    this.round = new Round({
-      players: this.players,
-      smallBlind: this.smallBlind,
-    });
+    this.players.forEach((player) => player.clearHand());
   }
 }

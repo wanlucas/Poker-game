@@ -4,8 +4,9 @@ import Player from "./Player";
 import Stages, { Stage } from "./Stages";
 
 export interface IRound {
-  smallBlind: number;
   players: Player[];
+  smallBlind: number;
+  onRoundEnd: () => void;
 }
 
 export default class Round {
@@ -14,16 +15,18 @@ export default class Round {
   public deck: Deck;
   public pot: number;
   public community: Card[];
+  private onRoundEnd: () => void;
 
   get currentStage() {
     return this.stages[0];
   }
 
-  constructor({ players, smallBlind }: IRound) {
+  constructor({ players, smallBlind, onRoundEnd }: IRound) {
     this.deck = new Deck();
     this.players = players;
     this.pot = 0;
     this.community = [];
+    this.onRoundEnd = onRoundEnd;
     this.stages = Stages.make({
       players,
       smallBlind,
@@ -48,7 +51,7 @@ export default class Round {
     const winner = this.verifyWinner();
 
     winner.receive(this.pot);
-    this.pot = 0;
+    this.onRoundEnd();
   }
 
   private nextStage() {

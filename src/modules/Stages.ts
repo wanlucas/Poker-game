@@ -59,7 +59,7 @@ export abstract class Stage {
   constructor({ players, deck, onStageEnd }: IStage) {
     this.onStageEnd = onStageEnd;
     this.deck = deck;
-    this.players = players;
+    this.players = [...players];
     this.currentPlayerI = 0;
     this.lastPlayerToPlayI = players.length - 1;
     this.biggestBet = 0;
@@ -82,6 +82,13 @@ export abstract class Stage {
     if (this.currentPlayer.currentBet === this.biggestBet) {
       throw new Error("Invalid fold");
     }
+
+    this.currentPlayer.pay();
+    this.players.splice(this.currentPlayerI, 1);
+
+    if (this.players.length === 1) {
+      this.onStageEnd();
+    }
   }
 
   public call() {
@@ -92,6 +99,7 @@ export abstract class Stage {
   }
 
   public raise(value: number) {
+    // TODO - previnir casos de all in
     const minValueToRaise = this.biggestBet * 2;
     const valueToRaise = value - this.currentPlayer.currentBet;
 

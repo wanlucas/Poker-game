@@ -25,6 +25,10 @@ export default class Player {
     this.hand.push(card);
   }
 
+  public clearHand() {
+    this.hand = [];
+  }
+
   public bet(amount: number) {
     const totalbet = Math.min(amount, this.bankroll);
 
