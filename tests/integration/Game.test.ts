@@ -1,6 +1,6 @@
 import Game from "../../src/modules/Game";
 
-describe("Testes da clase game", () => {
+describe("Testes da classe game", () => {
   const initialBankroll = 200;
   const smallBlind = 5;
   const game = new Game({ initialBankroll, smallBlind });
