@@ -1,4 +1,4 @@
-import Card, { Suit, Value } from "./Card";
+import Card, { Value } from "./Card";
 import assert from "assert";
 
 export enum Ranking {
@@ -37,14 +37,14 @@ export default class Hand {
 
     cards.forEach((card) => rankOccurrences[card.value - 2]++);
 
-    return [...cards].sort((a, b) => (
+    return cards.sort((a, b) => (
       rankOccurrences[b.value - 2] - rankOccurrences[a.value - 2] ||
       b.value - a.value
     ));
   }
 
   private sortByValue(cards: Card[]) {
-    return [...cards].sort((a, b) => b.value - a.value);
+    return cards.sort((a, b) => b.value - a.value);
   }
 
   private getRankAt(index: number) {
@@ -59,110 +59,112 @@ export default class Hand {
     return -1;
   }
 
-  private treatHand(cards: Card[]) {
-    return cards.slice(0, 5).reduce((acc, card) => {
-      if (card.value === 1) {
-        return [...acc, new Card({ value: 14, suit: card.suit })];
-      } else return [...acc, card];
-    }, [] as Card[]);
-  }
-
   private getStraight(cards: Card[]) {
     assert(cards.length >= 5);
 
-    const sortedCards = this.sortByValue(
-      cards.reduce((acc, card) => {
-        if (card.value === 14) {
-          return [...acc, new Card({ value: 1, suit: card.suit }), card];
-        } else return [...acc, card];
-      }, [] as Card[])
-    );
+    const treatedCards = this.sortByValue(cards.reduce((acc, card) => {
+      if (card.value === 14) acc.push(new Card({ value: 1, suit: card.suit }));
+      return acc.concat(card);
+    }, [] as Card[]));
 
-    let straight = [sortedCards[0]];
 
-    for (let i = 1; i < sortedCards.length; i++) {
+    let straight = [treatedCards[0]];
+
+    for (let i = 1; i < treatedCards.length; i++) {
       const prevRank = straight[straight.length - 1].value;
-      const currentCard = sortedCards[i];
+      const currentCard = treatedCards[i];
       const currentRank = currentCard.value;
 
       if (prevRank === currentRank) continue;
-
       if (prevRank === currentRank + 1) straight.push(currentCard);
       else if (straight.length < 5) straight = [currentCard];
     }
 
-    if (straight.length >= 5) return this.treatHand(straight);
-    return null;
+    if (straight.length >= 5) {
+      return straight.slice(0, 5).reduce((acc, card) => {
+        if (card.value === 1) return acc.concat(new Card({ value: 14, suit: card.suit }));
+        return acc.concat(card);
+      }, [] as Card[]);
+    }
   }
 
-  public checkStraightFlush() {
+  private getFlush(cards: Card[] = this.cards) {
     const cardsBySuit: { [key: string]: Card[] } = {};
 
-    let ranking: Ranking;
-
-    this.cards.forEach((card) => {
+    cards.forEach((card) => {
       if (!cardsBySuit[card.suit]) cardsBySuit[card.suit] = [];
       cardsBySuit[card.suit].push(card);
     });
 
-    const flushSuit = Object.values(cardsBySuit).find((suit) => suit.length >= 5)
+    const flush = Object.values(cardsBySuit).find((suit) => suit.length >= 5);
 
-    if (flushSuit) {
-      const straight = this.getStraight(flushSuit);
+    flush && this.sortByValue(flush);
+
+    return flush;
+  }
+
+  private checkStraights() {
+    const flush = this.getFlush();
+
+    let ranking: Ranking;
+    let hand: Card[];
+
+    if (flush) {
+      const straight = this.getStraight(flush);
 
       if (straight) {
-        if (straight[1].value === 13) {
+        if (straight[0].value === 14) {
           ranking = Ranking.RoyalFlush;
         } else ranking = Ranking.StraightFlush;
 
-        return { ranking, hand: this.treatHand(straight) };
-      } else ranking = Ranking.Flush;
-
-      return { ranking, hand: this.treatHand(flushSuit.sort((a, b) => b.value - a.value)) };
+         hand = straight;
+      } else {
+        ranking = Ranking.Flush;
+        hand = flush;
+      }
     } else {
       const straight = this.getStraight(this.cards);
 
       if (straight) {
         ranking = Ranking.Straight;
-        return { ranking, hand: this.treatHand(straight) };
+        hand = straight;
+      } else {
+        ranking = Ranking.HighCard;
+        hand = this.cards;
       }
     }
 
-    return { ranking: Ranking.HighCard, hand: this.treatHand(this.cards) };
+    return { ranking, hand: hand.slice(0, 5) };
   }
 
-  public checkPairs() {
+  private checkPairs() {
     const firstRank = this.getRankAt(0);
-    const firstRankLastOcc = this.lastOccurrenceOfRank(firstRank);
+    const lastOccurrence = this.lastOccurrenceOfRank(firstRank);
 
     let ranking = Ranking.HighCard;
 
-    if (firstRankLastOcc === 3) {
+    if (lastOccurrence === 3) {
       ranking = Ranking.FourOfAKind;
-    } else if (firstRankLastOcc === 2) {
+    } else if (lastOccurrence === 2) {
       if (this.getRankAt(3) === this.getRankAt(4)) {
         ranking = Ranking.FullHouse;
       } else ranking = Ranking.ThreeOfAKind;
-    } else if (firstRankLastOcc === 1) {
+    } else if (lastOccurrence === 1) {
       if (this.getRankAt(2) === this.getRankAt(3)) {
         ranking = Ranking.TwoPair;
       } else ranking = Ranking.Pair;
     }
 
-    return { ranking, hand: this.treatHand(this.cards) };
+    return { ranking, hand: this.cards.slice(0, 5) };
   }
 
-  public evaluate() {
+  private evaluate() {
     const pairRank = this.checkPairs();
-    const straightFlushRank = this.checkStraightFlush();
+    const straightRank = this.checkStraights();
+    const higher = straightRank.ranking > pairRank.ranking ? straightRank : pairRank;
 
-    if (straightFlushRank.ranking > pairRank.ranking) {
-      this.ranking = straightFlushRank.ranking;
-      this.hand = straightFlushRank.hand;
-    } else {
-      this.ranking = pairRank.ranking;
-      this.hand = pairRank.hand;
-    }
+    this.ranking = higher.ranking;
+    this.hand = higher.hand;
   }
 
   public toString() {
