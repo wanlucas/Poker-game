@@ -67,7 +67,6 @@ export default class Hand {
       return acc.concat(card);
     }, [] as Card[]));
 
-
     let straight = [treatedCards[0]];
 
     for (let i = 1; i < treatedCards.length; i++) {
